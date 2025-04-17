@@ -14,3 +14,12 @@
 ```
 https://github.com/lotablet/mytreno-card/
 ```
+Tipo: `Lovelace`
+
+3. Installa `MyTreno Card`
+4. Dopo il riavvio, aggiungi questa card in Lovelace:
+
+```
+type: custom:my-treno-card
+sensor: sensor.mytreno_laspezia
+```
