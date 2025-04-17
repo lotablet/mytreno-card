@@ -9,12 +9,12 @@
 ## 📦 Installazione via HACS
 
 1. Vai in HACS → Frontend → Menu (⋮) → "Custom repositories"
-2. Inserisci l'URL della repo:
+2. Inserisci l'URL della repo e imposta tipo: `Lovelace`:
 
 ```
 https://github.com/lotablet/mytreno-card/
 ```
-Tipo: `Lovelace`
+
 
 3. Installa `MyTreno Card`
 4. Dopo il riavvio, aggiungi questa card in Lovelace:
