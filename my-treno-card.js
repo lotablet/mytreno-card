@@ -76,7 +76,7 @@ class MyTrenoCard extends HTMLElement {
         .slider {
           display: flex;
           width: 200%;
-          transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+          transition: transform 1s linear;
           transform: translateX(${this.page === 0 ? "0%" : "-50%"});
         }
 
