@@ -5,7 +5,7 @@
   "description": "Card Lovelace per visualizzare treni da ViaggiaTreno",
   "resources": [
     {
-      "url": "/local/mytreno-card/my-treno-card.js",
+      "url": "/local/my-treno-card.js",
       "type": "module"
     }
   ],
