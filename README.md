@@ -10,3 +10,7 @@
 
 1. Vai in HACS → Frontend → Menu (⋮) → "Custom repositories"
 2. Inserisci l'URL della repo:
+
+```
+https://github.com/lotablet/mytreno-card/
+```
