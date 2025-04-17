@@ -76,7 +76,6 @@ class MyTrenoCard extends HTMLElement {
         .slider {
           display: flex;
           width: 200%;
-          transition: transform 1s linear;
           transform: translateX(${this.page === 0 ? "0%" : "-50%"});
         }
 
