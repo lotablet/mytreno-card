@@ -1,0 +1,14 @@
+{
+  "name": "MyTreno Card",
+  "filename": "my-treno-card.js",
+  "render_readme": true,
+  "description": "Card Lovelace per visualizzare treni da ViaggiaTreno",
+  "resources": [
+    {
+      "url": "/local/my-treno-card.js",
+      "type": "module"
+    }
+  ],
+  "type": "plugin",
+  "country": "IT"
+}
