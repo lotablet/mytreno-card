@@ -25,9 +25,12 @@ sensor: sensor.mytreno_laspezia
 Puoi anche usare card mod per "aggiustare" le dimensioni della card
 
 ```
+type: custom:my-treno-card
+sensor: sensor.mytreno_la_spezia_centrale
 card_mod:
   style: |
     ha-card {
       height: 400px;
+      width: 450px;
     }
 ```
