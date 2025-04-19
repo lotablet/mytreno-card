@@ -170,7 +170,7 @@ class MyTrenoCard extends HTMLElement {
           border-radius: 50%;
           cursor: pointer;
           user-select: none;
-          z-index: 10;
+          z-index: 1;
           transition: background 0.2s ease;
           font-size: 1rem;
         }
