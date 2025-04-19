@@ -22,3 +22,12 @@ https://github.com/lotablet/mytreno-card/
 type: custom:my-treno-card
 sensor: sensor.mytreno_laspezia
 ```
+Puoi anche usare card mod per "aggiustare" le dimensioni della card
+
+```
+card_mod:
+  style: |
+    ha-card {
+      height: 400px;
+    }
+```
