@@ -4,7 +4,8 @@
 ![hacs](https://img.shields.io/badge/HACS-default-orange)
 
 > Card Lovelace per visualizzare partenze e arrivi dei treni usando ViaggiaTreno.
-
+---
+![sample](https://github.com/lotablet/mytreno-card/blob/main/image/sample_card.gif)
 ## 📦 Installazione via HACS
 
 1. Vai in HACS → Frontend → Menu (⋮) → "Custom repositories"
