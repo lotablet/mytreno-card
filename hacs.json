@@ -1,6 +1,6 @@
 {
   "name": "MyTreno Card",
-  "content_in_root": false,
+  "content_in_root": true,
   "render_readme": true,
   "filename": "my-treno-card.js",
   "homeassistant": "2024.3.0"
