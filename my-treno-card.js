@@ -164,6 +164,7 @@ class MyTrenoCard extends HTMLElement {
     }
 
     // Crea popup con i dati del treno
+    this._popupOpen = true;
     const overlay = document.createElement("div");
     overlay.className = "treno-popup-overlay";
 
@@ -206,11 +207,6 @@ class MyTrenoCard extends HTMLElement {
         .fermate li { line-height:1.4em; }
         .fermate li.done { opacity:.4; text-decoration:line-through; }
         .bin { font-size:.8em; opacity:.7; }
-        .treno-popup.theme-light {
-          background: #fff;
-          color: #111;
-          font-family: 'Inter', sans-serif;
-        }
         .treno-popup-content p {
           margin: 0.75rem 0;
           line-height: 1.4;
@@ -250,7 +246,7 @@ class MyTrenoCard extends HTMLElement {
         	left: 0;
         	width: var(--timeline-line-width, 100%);
         	height: 8px;
-        	background: #dbdbdb;
+        	background: #0010ff;
         	z-index: 0;
         }
         .treno-stop {
@@ -277,7 +273,7 @@ class MyTrenoCard extends HTMLElement {
         	height: 2rem;
         	line-height: 8;
         	text-align: left;
-        	color: #444;
+        	color: var(--mytreno-text-color, #ffffff);
         	margin-left: 50px;
         }
         .treno-stop .dot {
@@ -315,7 +311,7 @@ class MyTrenoCard extends HTMLElement {
         .treno-stop .info {
           font-size: 0.8rem;
           margin-top: 0.6rem;
-          color: #999;
+          color: var(--mytreno-info-color, #ffffff);
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -326,7 +322,6 @@ class MyTrenoCard extends HTMLElement {
 
         .treno-stop .info span:first-child {
           font-weight: 600;
-          color: #111;
         }
 
         .treno-stop .info span:last-child {
@@ -335,17 +330,29 @@ class MyTrenoCard extends HTMLElement {
           opacity: 0.8;
         }
 
+        .treno-popup-content p {
+          margin: 0.75rem 0;
+          line-height: 1.4;
+        }
         .treno-popup.theme-light {
+          --mytreno-text-color: #000;
+          --mytreno-info-color: #000;
           background: #fff;
           color: #111;
           font-family: 'Inter', sans-serif;
         }
 
-        .treno-popup-content p {
-          margin: 0.75rem 0;
-          line-height: 1.4;
+        .treno-popup.theme-retro .treno-timeline::before {
+          background: #d00000;
         }
-
+        .treno-popup.theme-neon .treno-timeline::before {
+        	background: #e0e2ff;
+        	box-shadow: 15px 0px 17px #1af4ff, 0 0 20px #2060f6;
+        	border-radius: 36px;
+        }
+        .treno-popup.theme-light .treno-timeline::before {
+          background: #5679ff;
+        }
         .treno-popup.theme-light h3 {
           color: #007aff;
         }
@@ -357,6 +364,8 @@ class MyTrenoCard extends HTMLElement {
         }
 
         .treno-popup.theme-neon {
+          --mytreno-text-color: #66ffe0;
+          --mytreno-info-color: #ff00cc;
           background: #0f0f23;
           color: #00ffcc;
           font-family: 'Inter', sans-serif;
@@ -373,6 +382,8 @@ class MyTrenoCard extends HTMLElement {
         }
 
         .treno-popup.theme-retro {
+          --mytreno-text-color: #ffffff;
+          --mytreno-info-color: #ffffff;
           background: #202020;
           color: #ffcc00;
           font-family: 'Press Start 2P', monospace;
@@ -396,6 +407,7 @@ class MyTrenoCard extends HTMLElement {
     this.appendChild(overlay);
     overlay.addEventListener("click", e => {
       if (e.target === overlay) overlay.remove();
+    this._popupOpen = false;
     });
 
     popup.querySelector(".close-btn").addEventListener("click", () => overlay.remove());
@@ -409,7 +421,8 @@ class MyTrenoCard extends HTMLElement {
   }
 
   set hass(hass) {
-    if (this._preventRender) return;
+    if (this._preventRender || this._popupOpen) return;
+
     const changed =
       JSON.stringify(this._hass?.states?.[this._sensor]) !== JSON.stringify(hass?.states?.[this._sensor]) ||
       JSON.stringify(this._hass?.states?.[this._extra]) !== JSON.stringify(hass?.states?.[this._extra]);
@@ -419,6 +432,7 @@ class MyTrenoCard extends HTMLElement {
     this._hass = hass;
     this._render();
   }
+
   static getConfigElement() {
     return document.createElement("my-treno-card-editor");
   }
@@ -457,7 +471,7 @@ class MyTrenoCard extends HTMLElement {
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
           @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
           .theme-default ha-card {
-            background: linear-gradient(165deg, #1a1b1e 0%, #121316 100%);
+            background: linear-gradient(140deg, #111728 0%, #1a1d26 100%);
             color: #ffffff;
           }
           .theme-retro ha-card {
@@ -600,7 +614,7 @@ class MyTrenoCard extends HTMLElement {
           ha-card {
             display: flex;
             flex-direction: column;
-            background: linear-gradient(165deg, #1a1b1e 0%, #121316 100%);
+            background: linear-gradient(140deg, #111728 0%, #1a1d26 100%);
             color: #ffffff;
             font-family: 'Inter', sans-serif;
             padding: 1.5rem;
@@ -627,7 +641,9 @@ class MyTrenoCard extends HTMLElement {
           }
 
           .treno-popup {
-            background: #1a1b1e;
+            --mytreno-text-color: #ffffff;
+            --mytreno-info-color: #edbd00;
+            background: linear-gradient(140deg, #111728 0%, #1a1d26 100%);
             color: #fff;
             padding: 1.5rem;
             border-radius: 12px;
