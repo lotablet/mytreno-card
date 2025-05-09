@@ -24,13 +24,16 @@ https://github.com/lotablet/mytreno-card/
 
 ```
 type: custom:my-treno-card
-sensor: sensor.mytreno_laspezia
+extra_sensor: sensor.mytreno_selected_train #OBBLIGATORIO PER IL TRACKING
+theme: delfaut   # default - neon - light - retro
 ```
 Puoi anche usare card mod per "aggiustare" le dimensioni della card
 
 ```
 type: custom:my-treno-card
 sensor: sensor.mytreno_la_spezia_centrale
+extra_sensor: sensor.mytreno_selected_train
+theme: delfaut
 card_mod:
   style: |
     ha-card {
