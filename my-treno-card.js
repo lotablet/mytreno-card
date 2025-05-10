@@ -688,8 +688,8 @@ class MyTrenoCard extends HTMLElement {
           }
 
           .treno-popup-content p {
-          	margin: 0.75rem 0;
-          	line-height: 1.4;
+            margin: 0.75rem 0;
+            line-height: 1.4;
           }
 
           .treno-popup-content strong {
@@ -1198,10 +1198,10 @@ class MyTrenoTrackingCard extends HTMLElement {
     const ritardo = newState;
 
     const fermateHTML = `
-      <div class="treno-timeline-scroll">
-        <div class="treno-timeline">
+      <div class="tracking-treno-timeline-scroll">
+        <div class="tracking-treno-timeline">
           ${fermate.map(f => `
-            <div class="treno-stop ${f.arrivato ? 'done' : ''} ${prossima === f.stazione ? 'next' : ''}">
+            <div class="tracking-treno-stop ${f.arrivato ? 'done' : ''} ${prossima === f.stazione ? 'next' : ''}">
               <div class="label">${f.stazione}</div>
               <div class="dot"></div>
               <div class="info">
@@ -1221,21 +1221,21 @@ class MyTrenoTrackingCard extends HTMLElement {
     this.appendChild(style);
 
     const card = document.createElement("ha-card");
-    card.className = `treno-popup theme-${this._theme}`;
+    card.className = `tracking-treno-popup theme-${this._theme}`;
     card.innerHTML = `
-      <div class="treno-popup-content">
+      <div class="tracking-treno-popup-content">
         ${this._config.title ? `<p class="treno-custom-title">${this._config.title}</p>` : ""}
         <h3>Treno ${data.train_number || "??"}</h3>
         <p><strong>Ritardo:</strong> ${ritardo} min</p>
         <p><strong>Prossima:</strong> ${prossima} (${orario})</p>
         <h4>Percorso</h4>
-        <div class="fermate">${fermateHTML}</div>
+        <div class="tracking-fermate">${fermateHTML}</div>
       </div>
     `;
     this.appendChild(card);
     requestAnimationFrame(() => {
-      const scrollContainer = this.querySelector(".treno-timeline-scroll");
-      const nextStop = this.querySelector(".treno-stop.next");
+      const scrollContainer = this.querySelector(".tracking-treno-timeline-scroll");
+      const nextStop = this.querySelector(".tracking-treno-stop.next");
       if (scrollContainer && nextStop) {
         const offsetLeft = nextStop.offsetLeft - scrollContainer.offsetWidth / 2 + nextStop.offsetWidth / 2;
         scrollContainer.scrollTo({ left: offsetLeft });
@@ -1245,22 +1245,22 @@ class MyTrenoTrackingCard extends HTMLElement {
 
   _getPopupStyles() {
     return `
-      .fermate {
+      .tracking-fermate {
         margin: 0;
         padding: 0;
         overflow: visible !important;
         max-height: none !important;
       }
-      .fermate li { line-height:1.4em; }
-      .fermate li.done { opacity:.4; text-decoration:line-through; }
+      .tracking-fermate li { line-height:1.4em; }
+      .tracking-fermate li.done { opacity:.4; text-decoration:line-through; }
       .bin { font-size:.8em; opacity:.7; }
-      .treno-popup-content p {
+      .tracking-treno-popup-content p {
         margin: 0.75rem 0;
         line-height: 1.4;
       	padding-top: 0.5rem;
       	padding-left: 1.5rem;
       }
-      .treno-timeline-scroll {
+      .tracking-treno-timeline-scroll {
         overflow-x: auto;
         overflow-y: visible;
         padding-left: 20px;
@@ -1270,14 +1270,14 @@ class MyTrenoTrackingCard extends HTMLElement {
         scrollbar-width: thin;
         scrollbar-color: #999 transparent;
       }
-      .treno-timeline-scroll::-webkit-scrollbar {
+      .tracking-treno-timeline-scroll::-webkit-scrollbar {
         height: 6px;
       }
-      .treno-timeline-scroll::-webkit-scrollbar-thumb {
+      .tracking-treno-timeline-scroll::-webkit-scrollbar-thumb {
         background-color: #999;
         border-radius: 10px;
       }
-      .treno-timeline {
+      .tracking-treno-timeline {
         display: flex;
         position: relative;
         flex-direction: row;
@@ -1288,7 +1288,7 @@ class MyTrenoTrackingCard extends HTMLElement {
         justify-content: center;
         margin-bottom: 20px;
       }
-      .treno-timeline::before {
+      .tracking-treno-timeline::before {
         content: '';
         position: absolute;
         top: 77.5%;
@@ -1299,7 +1299,7 @@ class MyTrenoTrackingCard extends HTMLElement {
         background: #0010ff;
         z-index: 0;
       }
-      .treno-stop {
+      .tracking-treno-stop {
         flex: 0 0 auto;
         display: flex;
         flex-direction: column;
@@ -1309,7 +1309,7 @@ class MyTrenoTrackingCard extends HTMLElement {
         min-height: 100px;
         max-height: 100px;
       }
-      .treno-stop .label {
+      .tracking-treno-stop .label {
         transform: rotate(-35deg);
         transform-origin: bottom left;
         font-size: 0.7rem;
@@ -1325,7 +1325,7 @@ class MyTrenoTrackingCard extends HTMLElement {
         color: var(--mytreno-text-color, #ffffff);
         margin-left: 50px;
       }
-      .treno-stop .dot {
+      .tracking-treno-stop .dot {
         width: 16px;
         height: 16px;
         background: #ccc;
@@ -1335,15 +1335,15 @@ class MyTrenoTrackingCard extends HTMLElement {
         border: 2px solid #fff;
         transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
       }
-      .treno-stop:hover .dot {
+      .tracking-treno-stop:hover .dot {
         transform: scale(1.2);
         box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
       }
-      .treno-stop.done .dot {
+      .tracking-treno-stop.done .dot {
         background: #4caf50;
         opacity: 0.4;
       }
-      .treno-stop.next .dot {
+      .tracking-treno-stop.next .dot {
         background: #ff9800;
         box-shadow: 0 0 6px #ff9800, 0 0 12px rgba(255, 152, 0, 0.4);
         animation: pulse-dot 1.5s infinite;
@@ -1353,7 +1353,7 @@ class MyTrenoTrackingCard extends HTMLElement {
         70% { box-shadow: 0 0 0 10px rgba(255,152,0,0); }
         100% { box-shadow: 0 0 0 0 rgba(255,152,0,0); }
       }
-      .treno-stop .info {
+      .tracking-treno-stop .info {
         font-size: 0.8rem;
         margin-top: 0.6rem;
         color: var(--mytreno-info-color, #ffffff);
@@ -1364,30 +1364,30 @@ class MyTrenoTrackingCard extends HTMLElement {
         text-align: center;
         line-height: 1.2;
       }
-      .treno-stop .info span:first-child {
+      .tracking-treno-stop .info span:first-child {
         font-weight: 600;
       }
-      .treno-stop .info span:last-child {
+      .tracking-treno-stop .info span:last-child {
         font-style: italic;
         font-size: 0.75rem;
         opacity: 0.8;
       }
-      .treno-popup.theme-default {
+      .tracking-treno-popup.theme-default {
         --mytreno-title-color: #edbd00;
       }
 
-      .treno-popup.theme-light {
+      .tracking-treno-popup.theme-light {
         --mytreno-title-color: #007aff;
       }
 
-      .treno-popup.theme-neon {
+      .tracking-treno-popup.theme-neon {
         --mytreno-title-color: #ff00cc;
       }
 
-      .treno-popup.theme-retro {
+      .tracking-treno-popup.theme-retro {
         --mytreno-title-color: #ffcc00;
       }
-      .treno-popup.theme-light {
+      .tracking-treno-popup.theme-light {
         --mytreno-text-color: #000;
         --mytreno-info-color: #000;
         background: #fff;
@@ -1395,27 +1395,27 @@ class MyTrenoTrackingCard extends HTMLElement {
         --mytreno-title-color: #007aff;
         font-family: 'Inter', sans-serif;
       }
-      .treno-popup.theme-retro .treno-timeline::before {
+      .tracking-treno-popup.theme-retro .tracking-treno-timeline::before {
         background: #d00000;
       }
-      .treno-popup.theme-neon .treno-timeline::before {
+      .tracking-treno-popup.theme-neon .tracking-treno-timeline::before {
         background: #e0e2ff;
         box-shadow: 15px 0px 17px #1af4ff, 0 0 20px #2060f6;
         border-radius: 36px;
       }
-      .treno-popup.theme-light .treno-timeline::before {
+      .tracking-treno-popup.theme-light .tracking-treno-timeline::before {
         background: #5679ff;
       }
-      .treno-popup.theme-light h3 {
+      .tracking-treno-popup.theme-light h3 {
         color: #007aff;
       }
-      .treno-popup.theme-light .close-btn {
+      .tracking-treno-popup.theme-light .close-btn {
         color: #000;
       }
-      .treno-popup.theme-light .treno-popup-content strong {
+      .tracking-treno-popup.theme-light .tracking-treno-popup-content strong {
         color: #444;
       }
-      .treno-popup.theme-neon {
+      .tracking-treno-popup.theme-neon {
         --mytreno-text-color: #66ffe0;
         --mytreno-info-color: #ff00cc;
         background: #0f0f23;
@@ -1424,16 +1424,16 @@ class MyTrenoTrackingCard extends HTMLElement {
         font-family: 'Inter', sans-serif;
         box-shadow: 0 0 20px #00ffcc55;
       }
-      .treno-popup.theme-neon h3 {
+      .tracking-treno-popup.theme-neon h3 {
         color: #ff00cc;
       }
-      .treno-popup.theme-neon .close-btn {
+      .tracking-treno-popup.theme-neon .close-btn {
         color: #00ffcc;
       }
-      .treno-popup.theme-neon .treno-popup-content strong {
+      .tracking-treno-popup.theme-neon .tracking-treno-popup-content strong {
         color: #66ffe0;
       }
-      .treno-popup.theme-retro {
+      .tracking-treno-popup.theme-retro {
         --mytreno-text-color: #ffffff;
         --mytreno-info-color: #ffffff;
         background: #202020;
@@ -1443,23 +1443,23 @@ class MyTrenoTrackingCard extends HTMLElement {
         border: 2px solid #333;
         box-shadow: inset 0 0 6px #111;
       }
-      .treno-popup.theme-retro h3 {
+      .tracking-treno-popup.theme-retro h3 {
         color: #ffffff;
         font-size: 0.85rem;
       }
-      .treno-popup.theme-retro .close-btn {
+      .tracking-treno-popup.theme-retro .close-btn {
         color: #ffcc00;
       }
-      .treno-popup.theme-retro .treno-popup-content strong {
+      .tracking-treno-popup.theme-retro .tracking-treno-popup-content strong {
         color: #ffcc00;
       }
-      .treno-popup-content h3 {
+      .tracking-treno-popup-content h3 {
       	margin: 0px 20px 0.5rem;
       	font-size: 1.2rem;
       	font-weight: bold;
       	color: var(--mytreno-title-color, #edbd00);
       }
-      .treno-popup-content h4 {
+      .tracking-treno-popup-content h4 {
       	margin: 1rem 20px 0.5rem;
       	font-size: 1rem;
       	font-weight: 600;
