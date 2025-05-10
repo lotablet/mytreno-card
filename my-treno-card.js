@@ -1161,6 +1161,7 @@ class MyTrenoTrackingCard extends HTMLElement {
     super();
     this._lastAttributes = null;
     this._lastState = null;
+    this._expanded = false;
   }
   setConfig(config) {
     if (!config.sensor) throw new Error("Manca sensor nella config");
@@ -1214,42 +1215,96 @@ class MyTrenoTrackingCard extends HTMLElement {
       </div>
     `;
 
-    this.innerHTML = "";
+  this.innerHTML = "";
 
-    const style = document.createElement("style");
-    style.textContent = this._getPopupStyles();
-    this.appendChild(style);
+  const style = document.createElement("style");
+  style.textContent = this._getPopupStyles();
+  this.appendChild(style);
 
-    const card = document.createElement("ha-card");
-    card.className = `tracking-treno-popup theme-${this._theme}`;
-    card.innerHTML = `
-      <div class="tracking-treno-popup-content">
-        ${this._config.title ? `<p class="treno-custom-title">${this._config.title}</p>` : ""}
-        <h3>Treno ${data.train_number || "??"}</h3>
-        <p><strong>Ritardo:</strong> ${ritardo} min</p>
-        <p><strong>Prossima:</strong> ${prossima} (${orario})</p>
-        <h4>Percorso</h4>
-        <div class="tracking-fermate">${fermateHTML}</div>
+  const card = document.createElement("ha-card");
+  card.className = `tracking-treno-popup theme-${this._theme}`;
+  card.innerHTML = `
+    <div class="tracking-treno-popup-content">
+      ${this._config.title ? `<p class="treno-custom-title">${this._config.title}</p>` : ""}
+      <h3>Treno ${data.train_number || "??"}</h3>
+      <p><strong>Ritardo:</strong> ${ritardo} min</p>
+      <p><strong>Prossima:</strong> ${prossima} (${orario})</p>
+      <div class="tracking-percorso-toggle">
+        <span>Percorso</span>
+        <ha-icon icon="mdi:chevron-down"></ha-icon>
       </div>
-    `;
-    this.appendChild(card);
-    requestAnimationFrame(() => {
-      const scrollContainer = this.querySelector(".tracking-treno-timeline-scroll");
-      const nextStop = this.querySelector(".tracking-treno-stop.next");
-      if (scrollContainer && nextStop) {
-        const offsetLeft = nextStop.offsetLeft - scrollContainer.offsetWidth / 2 + nextStop.offsetWidth / 2;
-        scrollContainer.scrollTo({ left: offsetLeft });
-      }
-    });
-  }
+      <div class="tracking-fermate collapsed">${fermateHTML}</div>
+    </div>
+  `;
+  this.appendChild(card);
 
+  requestAnimationFrame(() => {
+    const scrollContainer = this.querySelector(".tracking-treno-timeline-scroll");
+    const nextStop = this.querySelector(".tracking-treno-stop.next");
+    const toggle = this.querySelector(".tracking-percorso-toggle");
+    const timelineWrapper = this.querySelector(".tracking-fermate");
+
+    if (scrollContainer && nextStop) {
+      const offsetLeft = nextStop.offsetLeft - scrollContainer.offsetWidth / 2 + nextStop.offsetWidth / 2;
+      scrollContainer.scrollTo({ left: offsetLeft });
+    }
+
+    if (toggle && timelineWrapper) {
+      toggle.addEventListener("click", () => {
+        this._expanded = !this._expanded;
+        timelineWrapper.classList.toggle("expanded", this._expanded);
+        timelineWrapper.classList.toggle("collapsed", !this._expanded);
+        toggle.querySelector("ha-icon").setAttribute(
+          "icon",
+          this._expanded ? "mdi:chevron-up" : "mdi:chevron-down"
+        );
+      });
+    }
+  });
+  }
   _getPopupStyles() {
     return `
+      .tracking-percorso-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 0 20px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--mytreno-title-color, #edbd00);
+        margin-bottom: 0.75rem; /* 👈 evita che si sovrapponga alla timeline */
+      }
+
+      .tracking-fermate.collapsed {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+      }
+
+      .tracking-fermate.expanded {
+        max-height: 1000px;
+        overflow: visible;
+        opacity: 1;
+      }
       .tracking-fermate {
         margin: 0;
         padding: 0;
-        overflow: visible !important;
-        max-height: none !important;
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transition: max-height 0.5s ease, opacity 0.3s ease;
+      }
+      .tracking-fermate.expanded {
+        max-height: 1000px; /* abbastanza grande per stare tranquilli */
+        opacity: 1;
+      }
+
+      .tracking-fermate.collapsed {
+        max-height: 0;
+        opacity: 0;
       }
       .tracking-fermate li { line-height:1.4em; }
       .tracking-fermate li.done { opacity:.4; text-decoration:line-through; }
@@ -1473,8 +1528,6 @@ class MyTrenoTrackingCard extends HTMLElement {
       	font-weight: bold;
       	color: var(--mytreno-title-color, #ffffff);
       }
-
-
     `;
   }
 
