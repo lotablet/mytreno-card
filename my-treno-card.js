@@ -688,8 +688,8 @@ class MyTrenoCard extends HTMLElement {
           }
 
           .treno-popup-content p {
-            margin: 0.75rem 0;
-            line-height: 1.4;
+          	margin: 0.75rem 0;
+          	line-height: 1.4;
           }
 
           .treno-popup-content strong {
@@ -1157,6 +1157,11 @@ class MyTrenoCardTrackingEditor extends LitElement {
 customElements.define("my-treno-card-tracking-editor", MyTrenoCardTrackingEditor);
 
 class MyTrenoTrackingCard extends HTMLElement {
+  constructor() {
+    super();
+    this._lastAttributes = null;
+    this._lastState = null;
+  }
   setConfig(config) {
     if (!config.sensor) throw new Error("Manca sensor nella config");
     this._sensor = config.sensor;
@@ -1170,14 +1175,27 @@ class MyTrenoTrackingCard extends HTMLElement {
 
   set hass(hass) {
     if (!this._sensor || !hass.states[this._sensor]) return;
-    const data = hass.states[this._sensor].attributes;
-    const state = hass.states[this._sensor].state;
 
+    const entity = hass.states[this._sensor];
+    const newState = entity.state;
+    const newAttrs = entity.attributes;
+
+    const stateChanged = this._lastState !== newState;
+    const attrsChanged = JSON.stringify(this._lastAttributes) !== JSON.stringify(newAttrs);
+
+    if (!stateChanged && !attrsChanged) return;
+
+    this._lastState = newState;
+    this._lastAttributes = newAttrs;
+    this._hass = hass;
+
+    // Procedi con il render
+    const data = newAttrs;
     const fermate = Array.isArray(data.fermate) ? data.fermate : [];
     const prossima = data.prossima_stazione || "-";
     const orario = (data.orario_previsto_prossima || "").substring(11, 16) || "--";
     const titolo = this._config.title || `Treno ${data.train_number || "??"}`;
-    const ritardo = state;
+    const ritardo = newState;
 
     const fermateHTML = `
       <div class="treno-timeline-scroll">
@@ -1196,22 +1214,25 @@ class MyTrenoTrackingCard extends HTMLElement {
       </div>
     `;
 
-    this.innerHTML = `
-      <ha-card class="treno-popup theme-${this._theme}">
-        <style>
-          ${this._getPopupStyles()}
-        </style>
-        <div class="treno-popup-content">
-          ${this._config.title ? `<p class="treno-custom-title">${this._config.title}</p>` : ""}
-          <h3>Treno ${data.train_number || "??"}</h3>
-          <p><strong>Ritardo:</strong> ${ritardo} min</p>
-          <p><strong>Prossima:</strong> ${prossima} (${orario})</p>
-          <h4>Percorso</h4>
-          <div class="fermate">${fermateHTML}</div>
-        </div>
-      </ha-card>
-    `;
+    this.innerHTML = "";
 
+    const style = document.createElement("style");
+    style.textContent = this._getPopupStyles();
+    this.appendChild(style);
+
+    const card = document.createElement("ha-card");
+    card.className = `treno-popup theme-${this._theme}`;
+    card.innerHTML = `
+      <div class="treno-popup-content">
+        ${this._config.title ? `<p class="treno-custom-title">${this._config.title}</p>` : ""}
+        <h3>Treno ${data.train_number || "??"}</h3>
+        <p><strong>Ritardo:</strong> ${ritardo} min</p>
+        <p><strong>Prossima:</strong> ${prossima} (${orario})</p>
+        <h4>Percorso</h4>
+        <div class="fermate">${fermateHTML}</div>
+      </div>
+    `;
+    this.appendChild(card);
     requestAnimationFrame(() => {
       const scrollContainer = this.querySelector(".treno-timeline-scroll");
       const nextStop = this.querySelector(".treno-stop.next");
@@ -1224,12 +1245,6 @@ class MyTrenoTrackingCard extends HTMLElement {
 
   _getPopupStyles() {
     return `
-      .treno-custom-title {
-        font-size: 1.1rem;
-        font-weight: bold;
-        margin: 0 0 0.5rem;
-        color: var(--mytreno-title-color, #ffffff);
-      }
       .fermate {
         margin: 0;
         padding: 0;
@@ -1242,12 +1257,15 @@ class MyTrenoTrackingCard extends HTMLElement {
       .treno-popup-content p {
         margin: 0.75rem 0;
         line-height: 1.4;
+      	padding-top: 0.5rem;
+      	padding-left: 1.5rem;
       }
       .treno-timeline-scroll {
         overflow-x: auto;
         overflow-y: visible;
-        padding: 0;
-        margin-top: 1rem;
+        padding-left: 20px;
+        padding-right: 20px;
+        margin-top: -1rem;
         position: relative;
         scrollbar-width: thin;
         scrollbar-color: #999 transparent;
@@ -1354,6 +1372,21 @@ class MyTrenoTrackingCard extends HTMLElement {
         font-size: 0.75rem;
         opacity: 0.8;
       }
+      .treno-popup.theme-default {
+        --mytreno-title-color: #edbd00;
+      }
+
+      .treno-popup.theme-light {
+        --mytreno-title-color: #007aff;
+      }
+
+      .treno-popup.theme-neon {
+        --mytreno-title-color: #ff00cc;
+      }
+
+      .treno-popup.theme-retro {
+        --mytreno-title-color: #ffcc00;
+      }
       .treno-popup.theme-light {
         --mytreno-text-color: #000;
         --mytreno-info-color: #000;
@@ -1420,6 +1453,28 @@ class MyTrenoTrackingCard extends HTMLElement {
       .treno-popup.theme-retro .treno-popup-content strong {
         color: #ffcc00;
       }
+      .treno-popup-content h3 {
+      	margin: 0px 20px 0.5rem;
+      	font-size: 1.2rem;
+      	font-weight: bold;
+      	color: var(--mytreno-title-color, #edbd00);
+      }
+      .treno-popup-content h4 {
+      	margin: 1rem 20px 0.5rem;
+      	font-size: 1rem;
+      	font-weight: 600;
+      	color: var(--mytreno-title-color, #edbd00);
+      }
+
+      .treno-custom-title {
+      	font-size: 1.5rem;
+        padding-left: 20px;
+        padding-top: 20px;
+      	font-weight: bold;
+      	color: var(--mytreno-title-color, #ffffff);
+      }
+
+
     `;
   }
 
