@@ -1064,3 +1064,375 @@ window.customCards.push({
   name: "MyTreno Card",
   description: "Visualizza treni in partenza e arrivo da una stazione ViaggiaTreno"
 });
+/* MYTRENO TRACKING */
+class MyTrenoCardTrackingEditor extends LitElement {
+  static properties = {
+    hass: { type: Object },
+    _config: { type: Object },
+  };
+
+  constructor() {
+    super();
+    this._config = {};
+  }
+
+  setConfig(config) {
+    this._config = { ...config };
+  }
+
+  getConfig() {
+    return { ...this._config };
+  }
+
+  _updateConfig(changedProp, value) {
+    const newConfig = { ...this._config, [changedProp]: value };
+    this._config = newConfig;
+    this.dispatchEvent(new CustomEvent("config-changed", {
+      detail: { config: newConfig },
+      bubbles: true,
+      composed: true,
+    }));
+  }
+
+  render() {
+    if (!this.hass) return html``;
+    const trenoEntities = Object.keys(this.hass.states)
+      .filter(e => e.startsWith("sensor.mytreno_treno_"));
+
+    return html`
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 0.85rem; opacity: 0.7;">Nome Treno</label>
+          <ha-textfield style="max-width: 50%;"
+            .value=${this._config.title || ""}
+            @input=${e => this._updateConfig("title", e.target.value)}
+          ></ha-textfield>
+        </div>
+        <div class="section-title">Seleziona il treno</div>
+        <ha-selector
+          style="max-width: 50%;"
+          .hass=${this.hass}
+          .selector=${{
+            entity: {
+              multiple: false,
+              include_entities: trenoEntities,
+            }
+          }}
+          .value=${this._config.sensor || ""}
+          @value-changed=${e => this._updateConfig("sensor", e.detail.value)}>
+        </ha-selector>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 0.85rem; opacity: 0.7;">Tema</label>
+          <ha-selector style="max-width: 50%;"
+            .hass=${this.hass}
+            .selector=${{
+              select: {
+                mode: "dropdown",
+                options: [
+                  { value: "default", label: "Default" },
+                  { value: "light", label: "Light (Chiaro)" },
+                  { value: "neon", label: "Neon (Cyberpunk)" },
+                  { value: "retro", label: "Retro (Classico)" }
+                ]
+              }
+            }}
+            .value=${this._config.theme || "default"}
+            @value-changed=${e => this._updateConfig("theme", e.detail.value)}
+          ></ha-selector>
+        </div>
+      </div>`;
+  }
+
+  static styles = css`
+    :host {
+      display: block;
+      padding: 16px;
+    }
+    .editor-block {
+      margin-top: 1rem;
+    }
+  `;
+}
+
+customElements.define("my-treno-card-tracking-editor", MyTrenoCardTrackingEditor);
+
+class MyTrenoTrackingCard extends HTMLElement {
+  setConfig(config) {
+    if (!config.sensor) throw new Error("Manca sensor nella config");
+    this._sensor = config.sensor;
+    this._theme = config.theme || "default";
+    this._config = config;
+  }
+
+  static getConfigElement() {
+    return document.createElement("my-treno-card-tracking-editor");
+  }
+
+  set hass(hass) {
+    if (!this._sensor || !hass.states[this._sensor]) return;
+    const data = hass.states[this._sensor].attributes;
+    const state = hass.states[this._sensor].state;
+
+    const fermate = Array.isArray(data.fermate) ? data.fermate : [];
+    const prossima = data.prossima_stazione || "-";
+    const orario = (data.orario_previsto_prossima || "").substring(11, 16) || "--";
+    const titolo = this._config.title || `Treno ${data.train_number || "??"}`;
+    const ritardo = state;
+
+    const fermateHTML = `
+      <div class="treno-timeline-scroll">
+        <div class="treno-timeline">
+          ${fermate.map(f => `
+            <div class="treno-stop ${f.arrivato ? 'done' : ''} ${prossima === f.stazione ? 'next' : ''}">
+              <div class="label">${f.stazione}</div>
+              <div class="dot"></div>
+              <div class="info">
+                <span>${(f.programmata || "").substring(11, 16) || "--"}</span>
+                ${f.binario ? `<span>bin ${f.binario}</span>` : ""}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+
+    this.innerHTML = `
+      <ha-card class="treno-popup theme-${this._theme}">
+        <style>
+          ${this._getPopupStyles()}
+        </style>
+        <div class="treno-popup-content">
+          ${this._config.title ? `<p class="treno-custom-title">${this._config.title}</p>` : ""}
+          <h3>Treno ${data.train_number || "??"}</h3>
+          <p><strong>Ritardo:</strong> ${ritardo} min</p>
+          <p><strong>Prossima:</strong> ${prossima} (${orario})</p>
+          <h4>Percorso</h4>
+          <div class="fermate">${fermateHTML}</div>
+        </div>
+      </ha-card>
+    `;
+
+    requestAnimationFrame(() => {
+      const scrollContainer = this.querySelector(".treno-timeline-scroll");
+      const nextStop = this.querySelector(".treno-stop.next");
+      if (scrollContainer && nextStop) {
+        const offsetLeft = nextStop.offsetLeft - scrollContainer.offsetWidth / 2 + nextStop.offsetWidth / 2;
+        scrollContainer.scrollTo({ left: offsetLeft });
+      }
+    });
+  }
+
+  _getPopupStyles() {
+    return `
+      .treno-custom-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin: 0 0 0.5rem;
+        color: var(--mytreno-title-color, #ffffff);
+      }
+      .fermate {
+        margin: 0;
+        padding: 0;
+        overflow: visible !important;
+        max-height: none !important;
+      }
+      .fermate li { line-height:1.4em; }
+      .fermate li.done { opacity:.4; text-decoration:line-through; }
+      .bin { font-size:.8em; opacity:.7; }
+      .treno-popup-content p {
+        margin: 0.75rem 0;
+        line-height: 1.4;
+      }
+      .treno-timeline-scroll {
+        overflow-x: auto;
+        overflow-y: visible;
+        padding: 0;
+        margin-top: 1rem;
+        position: relative;
+        scrollbar-width: thin;
+        scrollbar-color: #999 transparent;
+      }
+      .treno-timeline-scroll::-webkit-scrollbar {
+        height: 6px;
+      }
+      .treno-timeline-scroll::-webkit-scrollbar-thumb {
+        background-color: #999;
+        border-radius: 10px;
+      }
+      .treno-timeline {
+        display: flex;
+        position: relative;
+        flex-direction: row;
+        min-height: 200px;
+        width: fit-content;
+        align-items: end;
+        gap: 0;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .treno-timeline::before {
+        content: '';
+        position: absolute;
+        top: 77.5%;
+        transform: translateY(-50%);
+        left: 0;
+        width: var(--timeline-line-width, 100%);
+        height: 8px;
+        background: #0010ff;
+        z-index: 0;
+      }
+      .treno-stop {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 80px;
+        max-width: 80px;
+        min-height: 100px;
+        max-height: 100px;
+      }
+      .treno-stop .label {
+        transform: rotate(-35deg);
+        transform-origin: bottom left;
+        font-size: 0.7rem;
+        font-weight: 800;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: visible;
+        max-width: 70px;
+        margin-bottom: 1.2rem;
+        height: 2rem;
+        line-height: 8;
+        text-align: left;
+        color: var(--mytreno-text-color, #ffffff);
+        margin-left: 50px;
+      }
+      .treno-stop .dot {
+        width: 16px;
+        height: 16px;
+        background: #ccc;
+        border-radius: 50%;
+        position: relative;
+        z-index: 1;
+        border: 2px solid #fff;
+        transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+      }
+      .treno-stop:hover .dot {
+        transform: scale(1.2);
+        box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+      }
+      .treno-stop.done .dot {
+        background: #4caf50;
+        opacity: 0.4;
+      }
+      .treno-stop.next .dot {
+        background: #ff9800;
+        box-shadow: 0 0 6px #ff9800, 0 0 12px rgba(255, 152, 0, 0.4);
+        animation: pulse-dot 1.5s infinite;
+      }
+      @keyframes pulse-dot {
+        0% { box-shadow: 0 0 0 0 rgba(255,152,0,0.6); }
+        70% { box-shadow: 0 0 0 10px rgba(255,152,0,0); }
+        100% { box-shadow: 0 0 0 0 rgba(255,152,0,0); }
+      }
+      .treno-stop .info {
+        font-size: 0.8rem;
+        margin-top: 0.6rem;
+        color: var(--mytreno-info-color, #ffffff);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        text-align: center;
+        line-height: 1.2;
+      }
+      .treno-stop .info span:first-child {
+        font-weight: 600;
+      }
+      .treno-stop .info span:last-child {
+        font-style: italic;
+        font-size: 0.75rem;
+        opacity: 0.8;
+      }
+      .treno-popup.theme-light {
+        --mytreno-text-color: #000;
+        --mytreno-info-color: #000;
+        background: #fff;
+        color: #111;
+        --mytreno-title-color: #007aff;
+        font-family: 'Inter', sans-serif;
+      }
+      .treno-popup.theme-retro .treno-timeline::before {
+        background: #d00000;
+      }
+      .treno-popup.theme-neon .treno-timeline::before {
+        background: #e0e2ff;
+        box-shadow: 15px 0px 17px #1af4ff, 0 0 20px #2060f6;
+        border-radius: 36px;
+      }
+      .treno-popup.theme-light .treno-timeline::before {
+        background: #5679ff;
+      }
+      .treno-popup.theme-light h3 {
+        color: #007aff;
+      }
+      .treno-popup.theme-light .close-btn {
+        color: #000;
+      }
+      .treno-popup.theme-light .treno-popup-content strong {
+        color: #444;
+      }
+      .treno-popup.theme-neon {
+        --mytreno-text-color: #66ffe0;
+        --mytreno-info-color: #ff00cc;
+        background: #0f0f23;
+        color: #00ffcc;
+        --mytreno-title-color: #ff00cc;
+        font-family: 'Inter', sans-serif;
+        box-shadow: 0 0 20px #00ffcc55;
+      }
+      .treno-popup.theme-neon h3 {
+        color: #ff00cc;
+      }
+      .treno-popup.theme-neon .close-btn {
+        color: #00ffcc;
+      }
+      .treno-popup.theme-neon .treno-popup-content strong {
+        color: #66ffe0;
+      }
+      .treno-popup.theme-retro {
+        --mytreno-text-color: #ffffff;
+        --mytreno-info-color: #ffffff;
+        background: #202020;
+        color: #ffcc00;
+        --mytreno-title-color: #ffcc00;
+        font-family: 'Press Start 2P', monospace;
+        border: 2px solid #333;
+        box-shadow: inset 0 0 6px #111;
+      }
+      .treno-popup.theme-retro h3 {
+        color: #ffffff;
+        font-size: 0.85rem;
+      }
+      .treno-popup.theme-retro .close-btn {
+        color: #ffcc00;
+      }
+      .treno-popup.theme-retro .treno-popup-content strong {
+        color: #ffcc00;
+      }
+    `;
+  }
+
+  getCardSize() {
+    return 2;
+  }
+}
+
+customElements.define("my-treno-tracking-card", MyTrenoTrackingCard);
+
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type: "my-treno-tracking-card",
+  name: "MyTreno Tracking Card",
+  description: "Visualizza i dettagli di un treno come card fissa"
+});
