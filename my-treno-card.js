@@ -736,12 +736,12 @@ class MyTrenoCard extends HTMLElement {
 
           .treno-slider {
             display: flex;
-            width: 200%;
-            transform: translateX(${this.page === 0 ? "0%" : "-50%"});
             transition: transform 0.3s ease;
+            will-change: transform;
           }
 
           .treno-page {
+            flex: 0 0 100%;
             width: 100%;
           }
 
@@ -965,6 +965,7 @@ class MyTrenoCard extends HTMLElement {
           el.classList.remove("treno-scroll");
         }
       });
+      this._updateSlide();
     });
 
     this.querySelector("#nextBtn").addEventListener("click", () => {
@@ -975,8 +976,15 @@ class MyTrenoCard extends HTMLElement {
 
   _updateSlide() {
     const slider = this.querySelector(".treno-slider");
-    if (slider) {
-      slider.style.transform = `translateX(${this.page === 0 ? "0%" : "-50%"})`;
+    const wrapper = this.querySelector(".treno-slider-wrapper");
+    if (slider && wrapper) {
+      const pageWidth = wrapper.offsetWidth;
+      slider.querySelectorAll('.treno-page').forEach(page => {
+        page.style.width = pageWidth + "px";
+        page.style.flex = `0 0 ${pageWidth}px`;
+      });
+      slider.style.width = (pageWidth * 2) + "px";
+      slider.style.transform = `translateX(-${this.page * pageWidth}px)`;
     }
   }
 
