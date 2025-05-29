@@ -16,7 +16,10 @@ class MyTrenoCardEditor extends LitElement {
   constructor() {
     super();
     this._config = {};
-    this._labels = {
+  }
+
+  get _labels() {
+    const base = {
       it: {
         select_station: "Seleziona la stazione",
         select_theme: "Seleziona il tema",
@@ -24,6 +27,10 @@ class MyTrenoCardEditor extends LitElement {
         theme_light: "Light (Chiaro)",
         theme_neon: "Neon (Cyberpunk)",
         theme_retro: "Retro (Classico)",
+        train_name: "Nome Treno",
+        select_train: "Seleziona il treno",
+        theme: "Tema",
+        missing_sensor: "Config non valida: manca il sensore"
       },
       en: {
         select_station: "Select station",
@@ -32,18 +39,24 @@ class MyTrenoCardEditor extends LitElement {
         theme_light: "Light",
         theme_neon: "Neon (Cyberpunk)",
         theme_retro: "Retro (Classic)",
+        train_name: "Train Name",
+        select_train: "Select train",
+        theme: "Theme",
+        missing_sensor: "Invalid config: missing sensor"
       }
     };
+    const card = customElements.get('my-treno-card');
+    return card && card.prototype._labels ? card.prototype._labels : base;
   }
 
   _getLang() {
-    if (!this.hass) return 'it';
-    return (this.hass.selectedLanguage || this.hass.language || 'it').substring(0,2);
+    if (!this.hass) return 'en';
+    return (this.hass.selectedLanguage || this.hass.language || 'en').substring(0,2);
   }
 
   _t(key) {
     const lang = this._getLang();
-    return (this._labels[lang] && this._labels[lang][key]) ? this._labels[lang][key] : (this._labels['it'][key] || key);
+    return (this._labels[lang] && this._labels[lang][key]) ? this._labels[lang][key] : (this._labels['en'][key] || key);
   }
 
   setConfig(config) {
@@ -140,6 +153,7 @@ class MyTrenoCard extends HTMLElement {
     this._preventRender = false;
     this._labels = {
       it: {
+        // Card principali
         departures: "Partenze da",
         arrivals: "Arrivi a",
         destination: "Destinazione",
@@ -158,6 +172,21 @@ class MyTrenoCard extends HTMLElement {
         late: "+{delay} min",
         early: "{delay} min",
         min: "min",
+        orario: "Orario",
+        // Editor
+        select_station: "Seleziona la stazione",
+        select_theme: "Seleziona il tema",
+        theme_default: "Default",
+        theme_light: "Light (Chiaro)",
+        theme_neon: "Neon (Cyberpunk)",
+        theme_retro: "Retro (Classico)",
+        // Tracking editor
+        train_name: "Nome Treno",
+        select_train: "Seleziona il treno",
+        theme: "Tema",
+        // Tracking card
+        show_route: "Percorso",
+        missing_sensor: "Config non valida: manca il sensore"
       },
       en: {
         departures: "Departures from",
@@ -178,18 +207,35 @@ class MyTrenoCard extends HTMLElement {
         late: "+{delay} min",
         early: "{delay} min",
         min: "min",
+        orario: "Time",
+        // Editor
+        select_station: "Select station",
+        select_theme: "Select theme",
+        theme_default: "Default",
+        theme_light: "Light",
+        theme_neon: "Neon (Cyberpunk)",
+        theme_retro: "Retro (Classic)",
+        // Tracking editor
+        train_name: "Train Name",
+        select_train: "Select train",
+        theme: "Theme",
+        // Tracking card
+        show_route: "Route",
+        missing_sensor: "Invalid config: missing sensor"
       }
     };
   }
 
   _getLang() {
-    if (!this._hass) return 'it';
-    return (this._hass.selectedLanguage || this._hass.language || 'it').substring(0,2);
+    if (!this._hass) return 'en';
+    return (this._hass.selectedLanguage || this._hass.language || 'en').substring(0,2);
   }
 
   _t(key, vars = {}) {
     const lang = this._getLang();
-    let str = (this._labels[lang] && this._labels[lang][key]) ? this._labels[lang][key] : (this._labels['it'][key] || key);
+    let str = (this._labels[lang] && this._labels[lang][key])
+      ? this._labels[lang][key]
+      : (this._labels['en'][key] || key);
     Object.keys(vars).forEach(k => {
       str = str.replace(`{${k}}`, vars[k]);
     });
@@ -277,8 +323,8 @@ class MyTrenoCard extends HTMLElement {
       <button class="close-btn">&times;</button>
       <div class="treno-popup-content">
         <h3>${this._t('train')} ${attrs.train_number}</h3>
-        <p><strong>${this._t('delay')}:</strong> ${attrs.ritardo ?? "-"} ${this._t('min')}</p>
-        <p><strong>${this._t('next')}:</strong> ${attrs.prossima_stazione ?? "-"} (${attrs.orario_previsto_prossima?.substring(11, 16) ?? "--"})</p>
+        <p><strong>${this._t('delay')}:</strong> ${attrs.ritardo ?? "-"}</p>
+        <p><strong>${this._t('next')}:</strong> ${attrs.prossima_stazione ?? "-"}</p>
         <h4>${this._t('route')}</h4>
         <div class="fermate">${fermateHTML}</div>
       </div>
@@ -528,7 +574,7 @@ class MyTrenoCard extends HTMLElement {
     }
 
     if (!config.sensor) {
-      throw new Error("Config non valida: manca il sensore");
+      throw new Error(this._t('missing_sensor'));
     }
 
     if (!config.extra_sensor) {
@@ -622,11 +668,14 @@ class MyTrenoCard extends HTMLElement {
           }
 
           .theme-retro .treno-platform-badge,
-          .theme-retro .treno-platform-info,
           .theme-retro .treno-platform-arrow {
             all: unset;
           }
-
+          .treno-platform-info {
+              display: flex;
+              flex-direction: row;
+              gap: 5px;
+          }
           .theme-light ha-card {
             background: #f9f9f9;
             color: #111;
@@ -818,18 +867,90 @@ class MyTrenoCard extends HTMLElement {
             width: 100%;
             overflow: hidden;
           }
-
           .treno-slider {
             display: flex;
-            transition: transform 0.3s ease;
-            will-change: transform;
+            flex-direction: row;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 24px;
+            width: 100%;
+            box-sizing: border-box;
           }
-
+          .treno-slider::-webkit-scrollbar {
+            display: none;
+          }
           .treno-page {
             flex: 0 0 100%;
-            width: 100%;
+            min-width: 100%;
+            max-width: 100%;
+            scroll-snap-align: center;
+            box-sizing: border-box;
+            /* NIENTE background, border-radius, box-shadow qui! */
           }
-
+          table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 0.5rem;
+          }
+          th {
+              text-align: left;
+              padding: 0.75rem 1vh;
+              color: rgb(217 216 216 / 85%);
+              font-weight: 400;
+              font-size: 0.85rem;
+              border-bottom: 2px solid rgb(255 255 255 / 62%);
+              vertical-align: middle;
+              background: transparent;
+              letter-spacing: 0.01em;
+          }
+          td {
+            text-align: left;
+            padding: 0.875rem 1vh;
+            font-size: 0.9375rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            vertical-align: middle;
+          }
+          .treno-scrollable-text {
+            min-width: 0;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+          }
+          .treno-scrollable-text span {
+            display: inline-block;
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            will-change: transform;
+            padding-right: 20px;
+          }
+          .treno-scrollable-text.treno-overflowing span {
+            animation: scroll-text 5s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+          }
+          @keyframes scroll-text {
+            0% { transform: translateX(0); }
+            5% { transform: translateX(0); }
+            35% { transform: translateX(calc(-100% + 100%)); }
+            65% { transform: translateX(calc(-100% + 100%)); }
+            95% { transform: translateX(0); }
+            100% { transform: translateX(0); }
+          }
+          @media (max-width: 600px) {
+            .treno-scrollable-text {
+              font-size: 0.95em;
+            }
+            .treno-page {
+              padding: 0.2em 0.1em;
+              border-radius: 10px;
+            }
+          }
           .treno-title {
             font-size: 1.25rem;
             font-weight: 600;
@@ -849,42 +970,6 @@ class MyTrenoCard extends HTMLElement {
             background: #edbd00;
             border-radius: 2px;
             flex-shrink: 0;
-          }
-
-          table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 0.5rem;
-          }
-
-          th {
-            text-align: left;
-            padding: 0.75rem 1vh;
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 500;
-            font-size: 0.875rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          }
-
-          td {
-            text-align: left;
-            padding: 0.875rem 1vh;
-            font-size: 0.9375rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          }
-
-          tr {
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-          }
-
-          tr:last-child td {
-            border-bottom: none;
-          }
-
-          tr:hover td {
-            background: rgba(255, 255, 255, 0.03);
           }
 
           .status-chip {
@@ -957,47 +1042,20 @@ class MyTrenoCard extends HTMLElement {
             100% { transform: translateX(100%); }
           }
 
-          .treno-scrollable-text {
-            max-width: 140px;
-            width: 140px;
-            overflow: hidden;
-            white-space: nowrap;
-            position: relative;
-            text-align: left;
-          }
-
-          .treno-scrollable-text span {
-            display: inline-block;
-            will-change: transform;
-            padding-right: 20px;
-          }
-
-          .treno-scrollable-text.treno-overflowing span {
-            animation: scroll-text 5s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
-          }
-
-          @keyframes scroll-text {
-            0% { transform: translateX(0); }
-            5% { transform: translateX(0); }
-            35% { transform: translateX(calc(-100% + 140px)); }
-            65% { transform: translateX(calc(-100% + 140px)); }
-            95% { transform: translateX(0); }
-            100% { transform: translateX(0); }
-          }
-
-          @media (max-width: 500px) {
+          @media (max-width: 750px) {
             .treno-desktop-view {
-              display: none;
+              display: none !important;
             }
-
             .treno-mobile-view {
-              display: table;
+              display: table !important;
             }
-
-            .treno-popup {
-              width: calc(100% - 2rem);
-              margin: 1rem;
-              max-width: none;
+          }
+          @media (min-width: 751px) {
+            .treno-desktop-view {
+              display: table !important;
+            }
+            .treno-mobile-view {
+              display: none !important;
             }
           }
         </style>
@@ -1007,13 +1065,13 @@ class MyTrenoCard extends HTMLElement {
             <div class="treno-slider">
               <div class="treno-page">
                 <div class="treno-title">${this._t('departures')} ${stationName}</div>
-                ${this._renderTable(partenze, "destinazione", this._t('destination'), true)}
-                ${this._renderTable(partenze, "destinazione", this._t('destination'), false)}
+                ${this._renderTable(partenze, "destinazione", "destination", true)}
+                ${this._renderTable(partenze, "destinazione", "destination", false)}
               </div>
               <div class="treno-page">
                 <div class="treno-title">${this._t('arrivals')} ${stationName}</div>
-                ${this._renderTable(arrivi, "provenienza", this._t('provenance'), true)}
-                ${this._renderTable(arrivi, "provenienza", this._t('provenance'), false)}
+                ${this._renderTable(arrivi, "provenienza", "provenance", true)}
+                ${this._renderTable(arrivi, "provenienza", "provenance", false)}
               </div>
             </div>
           </div>
@@ -1050,7 +1108,16 @@ class MyTrenoCard extends HTMLElement {
           el.classList.remove("treno-scroll");
         }
       });
-      this._updateSlide();
+
+      // Scroll alla pagina corrente
+      const slider = this.querySelector('.treno-slider');
+      if (slider) {
+        const pages = slider.querySelectorAll('.treno-page');
+        if (pages.length > this.page) {
+          const pageEl = pages[this.page];
+          slider.scrollTo({ left: pageEl.offsetLeft, behavior: 'smooth' });
+        }
+      }
     });
 
     this.querySelector("#nextBtn").addEventListener("click", () => {
@@ -1060,22 +1127,37 @@ class MyTrenoCard extends HTMLElement {
   }
 
   _updateSlide() {
-    const slider = this.querySelector(".treno-slider");
-    const wrapper = this.querySelector(".treno-slider-wrapper");
-    if (slider && wrapper) {
-      const pageWidth = wrapper.offsetWidth;
-      slider.querySelectorAll('.treno-page').forEach(page => {
-        page.style.width = pageWidth + "px";
-        page.style.flex = `0 0 ${pageWidth}px`;
-      });
-      slider.style.width = (pageWidth * 2) + "px";
-      slider.style.transform = `translateX(-${this.page * pageWidth}px)`;
+    const slider = this.querySelector('.treno-slider');
+    if (slider) {
+      const pages = slider.querySelectorAll('.treno-page');
+      if (pages.length > this.page) {
+        const pageEl = pages[this.page];
+        slider.scrollTo({ left: pageEl.offsetLeft, behavior: 'smooth' });
+      }
     }
   }
 
   _sanitizePlatform(value) {
     if (!value || typeof value !== "string" || value.trim() === "") return "-";
-    return value.replace(/ tronco/i, "/T");
+    // Mappa dei numeri romani fino a 20 (puoi estendere se serve)
+    const romanMap = {
+      'XX': '20', 'XIX': '19', 'XVIII': '18', 'XVII': '17', 'XVI': '16', 'XV': '15', 'XIV': '14', 'XIII': '13', 'XII': '12', 'XI': '11',
+      'X': '10', 'IX': '9', 'VIII': '8', 'VII': '7', 'VI': '6', 'V': '5', 'IV': '4', 'III': '3', 'II': '2', 'I': '1'
+    };
+    let sanitized = value;
+    // Regex: trova numeri romani all'inizio, dopo spazio, o seguiti da caratteri non alfabetici o fine stringa
+    Object.keys(romanMap).forEach(roman => {
+      sanitized = sanitized.replace(new RegExp(`(^|\\s)${roman}(?=[^a-zA-Z0-9]|$)`, 'g'), (match, p1) => `${p1}${romanMap[roman]}`);
+    });
+    // Sostituisci IT, I T, 1T, 1 T (case insensitive, con o senza spazi) con 1/T
+    sanitized = sanitized.replace(/\b(1\s*T|I\s*T|IT|1T)\b/gi, '1/T');
+    sanitized = sanitized.replace(/ tronco/i, "/T");
+    // Sostituisci nT, n T (case insensitive, con o senza spazi) con n/T per n da 1 a 10
+    for (let n = 1; n <= 10; n++) {
+      sanitized = sanitized.replace(new RegExp(`\\b${n}\\s*T\\b`, 'gi'), `${n}/T`);
+      sanitized = sanitized.replace(new RegExp(`\\b${n}T\\b`, 'gi'), `${n}/T`);
+    }
+    return sanitized;
   }
 
   _renderTable(data, field, label, isDesktop) {
@@ -1083,8 +1165,8 @@ class MyTrenoCard extends HTMLElement {
       <table class="${isDesktop ? 'treno-desktop-view' : 'treno-mobile-view'}">
         <thead>
           <tr>
-            <th>${label}</th>
-            <th>Orario</th>
+            <th>${this._t(label)}</th>
+            <th>${this._t('orario')}</th>
             ${isDesktop ? `<th>${this._t('delay')}</th>` : ''}
             ${isDesktop ? `<th>${this._t('platform')}</th>` : `<th>${this._t('info')}</th>`}
             ${isDesktop ? `<th>${this._t('real')}</th>` : ''}
@@ -1097,7 +1179,6 @@ class MyTrenoCard extends HTMLElement {
             const binarioEffettivo = this._sanitizePlatform(t.binario_effettivo);
             const platformChanged = binarioEffettivo !== binarioPrevisto && binarioEffettivo !== "-";
             const tEncoded = encodeURIComponent(JSON.stringify(t));
-
             if (isDesktop) {
               return `
                 <tr data-treno="${tEncoded}">
@@ -1167,36 +1248,87 @@ class MyTrenoCardTrackingEditor extends LitElement {
   constructor() {
     super();
     this._config = {};
-    this._labels = {
+  }
+
+  get _labels() {
+    const base = {
       it: {
-        train_name: "Nome Treno",
-        select_train: "Seleziona il treno",
-        theme: "Tema",
+        select_station: "Seleziona la stazione",
+        select_theme: "Seleziona il tema",
         theme_default: "Default",
         theme_light: "Light (Chiaro)",
         theme_neon: "Neon (Cyberpunk)",
         theme_retro: "Retro (Classico)",
+        train_name: "Nome Treno",
+        select_train: "Seleziona il treno",
+        theme: "Tema",
+        // Card tracking
+        train: "Treno",
+        delay: "Ritardo",
+        next: "Prossima",
+        route: "Percorso",
+        min: "min",
+        arrivals: "Arrivi a",
+        departures: "Partenze da",
+        provenance: "Provenienza",
+        destination: "Destinazione",
+        on_time: "In orario",
+        late: "+{delay} min",
+        early: "{delay} min",
+        info: "Info",
+        platform: "Binario",
+        real: "Reale",
+        show_route: "Percorso",
+        not_available: "⚠️ Dati non disponibili",
+        loading: "⏳ Caricamento dati...",
+        add_card: "Aggiungi card",
+        orario: "Orario"
       },
       en: {
-        train_name: "Train Name",
-        select_train: "Select train",
-        theme: "Theme",
+        select_station: "Select station",
+        select_theme: "Select theme",
         theme_default: "Default",
         theme_light: "Light",
         theme_neon: "Neon (Cyberpunk)",
         theme_retro: "Retro (Classic)",
+        train_name: "Train Name",
+        select_train: "Select train",
+        theme: "Theme",
+        // Card tracking
+        train: "Train",
+        delay: "Delay",
+        next: "Next",
+        route: "Route",
+        min: "min",
+        arrivals: "Arrivals at",
+        departures: "Departures from",
+        provenance: "From",
+        destination: "Destination",
+        on_time: "On time",
+        late: "+{delay} min",
+        early: "{delay} min",
+        info: "Info",
+        platform: "Platform",
+        real: "Actual",
+        show_route: "Route",
+        not_available: "⚠️ Data not available",
+        loading: "⏳ Loading data...",
+        add_card: "Add card",
+        orario: "Time"
       }
     };
+    const card = customElements.get('my-treno-card');
+    return card && card.prototype._labels ? card.prototype._labels : base;
   }
 
   _getLang() {
-    if (!this.hass) return 'it';
-    return (this.hass.selectedLanguage || this.hass.language || 'it').substring(0,2);
+    if (!this.hass) return 'en';
+    return (this.hass.selectedLanguage || this.hass.language || 'en').substring(0,2);
   }
 
   _t(key) {
     const lang = this._getLang();
-    return (this._labels[lang] && this._labels[lang][key]) ? this._labels[lang][key] : (this._labels['it'][key] || key);
+    return (this._labels[lang] && this._labels[lang][key]) ? this._labels[lang][key] : (this._labels['en'][key] || key);
   }
 
   setConfig(config) {
@@ -1285,8 +1417,20 @@ class MyTrenoTrackingCard extends HTMLElement {
     this._lastAttributes = null;
     this._lastState = null;
     this._expanded = false;
-    this._labels = {
+  }
+  get _labels() {
+    const base = {
       it: {
+        select_station: "Seleziona la stazione",
+        select_theme: "Seleziona il tema",
+        theme_default: "Default",
+        theme_light: "Light (Chiaro)",
+        theme_neon: "Neon (Cyberpunk)",
+        theme_retro: "Retro (Classico)",
+        train_name: "Nome Treno",
+        select_train: "Seleziona il treno",
+        theme: "Tema",
+        // Card tracking
         train: "Treno",
         delay: "Ritardo",
         next: "Prossima",
@@ -1303,8 +1447,22 @@ class MyTrenoTrackingCard extends HTMLElement {
         platform: "Binario",
         real: "Reale",
         show_route: "Percorso",
+        not_available: "⚠️ Dati non disponibili",
+        loading: "⏳ Caricamento dati...",
+        add_card: "Aggiungi card",
+        orario: "Orario"
       },
       en: {
+        select_station: "Select station",
+        select_theme: "Select theme",
+        theme_default: "Default",
+        theme_light: "Light",
+        theme_neon: "Neon (Cyberpunk)",
+        theme_retro: "Retro (Classic)",
+        train_name: "Train Name",
+        select_train: "Select train",
+        theme: "Theme",
+        // Card tracking
         train: "Train",
         delay: "Delay",
         next: "Next",
@@ -1321,26 +1479,31 @@ class MyTrenoTrackingCard extends HTMLElement {
         platform: "Platform",
         real: "Actual",
         show_route: "Route",
+        not_available: "⚠️ Data not available",
+        loading: "⏳ Loading data...",
+        add_card: "Add card",
+        orario: "Time"
       }
     };
+    const card = customElements.get('my-treno-card');
+    return card && card.prototype._labels ? card.prototype._labels : base;
   }
-
   _getLang() {
-    if (!this._hass) return 'it';
-    return (this._hass.selectedLanguage || this._hass.language || 'it').substring(0,2);
+    if (!this._hass) return 'en';
+    return (this._hass.selectedLanguage || this._hass.language || 'en').substring(0,2);
   }
-
   _t(key, vars = {}) {
     const lang = this._getLang();
-    let str = (this._labels[lang] && this._labels[lang][key]) ? this._labels[lang][key] : (this._labels['it'][key] || key);
+    let str = (this._labels[lang] && this._labels[lang][key])
+      ? this._labels[lang][key]
+      : (this._labels['en'][key] || key);
     Object.keys(vars).forEach(k => {
       str = str.replace(`{${k}}`, vars[k]);
     });
     return str;
   }
-
   setConfig(config) {
-    if (!config.sensor) throw new Error("Manca sensor nella config");
+    if (!config.sensor) throw new Error(this._t('missing_sensor'));
     this._sensor = config.sensor;
     this._theme = config.theme || "default";
     this._config = config;
@@ -1352,28 +1515,22 @@ class MyTrenoTrackingCard extends HTMLElement {
 
   set hass(hass) {
     if (!this._sensor || !hass.states[this._sensor]) return;
-
     const entity = hass.states[this._sensor];
     const newState = entity.state;
     const newAttrs = entity.attributes;
-
     const stateChanged = this._lastState !== newState;
     const attrsChanged = JSON.stringify(this._lastAttributes) !== JSON.stringify(newAttrs);
-
     if (!stateChanged && !attrsChanged) return;
-
     this._lastState = newState;
     this._lastAttributes = newAttrs;
     this._hass = hass;
-
     // Procedi con il render
     const data = newAttrs;
     const fermate = Array.isArray(data.fermate) ? data.fermate : [];
     const prossima = data.prossima_stazione || "-";
     const orario = (data.orario_previsto_prossima || "").substring(11, 16) || "--";
     const titolo = this._config.title || `${this._t('train')} ${data.train_number || "??"}`;
-    const ritardo = newState;
-
+    const ritardo = (typeof newState === 'number' || !isNaN(parseInt(newState))) ? `${newState} ${this._t('min')}` : this._t('not_available');
     const fermateHTML = `
       <div class="tracking-treno-timeline-scroll">
         <div class="tracking-treno-timeline">
@@ -1390,53 +1547,47 @@ class MyTrenoTrackingCard extends HTMLElement {
         </div>
       </div>
     `;
-
-  this.innerHTML = "";
-
-  const style = document.createElement("style");
-  style.textContent = this._getPopupStyles();
-  this.appendChild(style);
-
-  const card = document.createElement("ha-card");
-  card.className = `tracking-treno-popup theme-${this._theme}`;
-  card.innerHTML = `
-    <div class="tracking-treno-popup-content">
-      ${this._config.title ? `<p class="treno-custom-title">${this._config.title}</p>` : ""}
-      <h3>${this._t('train')} ${data.train_number || "??"}</h3>
-      <p><strong>${this._t('delay')}:</strong> ${ritardo} ${this._t('min')}</p>
-      <p><strong>${this._t('next')}:</strong> ${prossima} (${orario})</p>
-      <div class="tracking-percorso-toggle">
-        <span>${this._t('show_route')}</span>
-        <ha-icon icon="mdi:chevron-down"></ha-icon>
+    this.innerHTML = "";
+    const style = document.createElement("style");
+    style.textContent = this._getPopupStyles();
+    this.appendChild(style);
+    const card = document.createElement("ha-card");
+    card.className = `tracking-treno-popup theme-${this._theme}`;
+    card.innerHTML = `
+      <div class="tracking-treno-popup-content">
+        ${this._config.title ? `<p class="treno-custom-title">${this._config.title}</p>` : ""}
+        <h3>${titolo}</h3>
+        <p><strong>${this._t('delay')}:</strong> ${ritardo}</p>
+        <p><strong>${this._t('next')}:</strong> ${prossima} (${orario})</p>
+        <div class="tracking-percorso-toggle">
+          <span>${this._t('show_route')}</span>
+          <ha-icon icon="mdi:chevron-down"></ha-icon>
+        </div>
+        <div class="tracking-fermate collapsed">${fermateHTML}</div>
       </div>
-      <div class="tracking-fermate collapsed">${fermateHTML}</div>
-    </div>
-  `;
-  this.appendChild(card);
-
-  requestAnimationFrame(() => {
-    const scrollContainer = this.querySelector(".tracking-treno-timeline-scroll");
-    const nextStop = this.querySelector(".tracking-treno-stop.next");
-    const toggle = this.querySelector(".tracking-percorso-toggle");
-    const timelineWrapper = this.querySelector(".tracking-fermate");
-
-    if (scrollContainer && nextStop) {
-      const offsetLeft = nextStop.offsetLeft - scrollContainer.offsetWidth / 2 + nextStop.offsetWidth / 2;
-      scrollContainer.scrollTo({ left: offsetLeft });
-    }
-
-    if (toggle && timelineWrapper) {
-      toggle.addEventListener("click", () => {
-        this._expanded = !this._expanded;
-        timelineWrapper.classList.toggle("expanded", this._expanded);
-        timelineWrapper.classList.toggle("collapsed", !this._expanded);
-        toggle.querySelector("ha-icon").setAttribute(
-          "icon",
-          this._expanded ? "mdi:chevron-up" : "mdi:chevron-down"
-        );
-      });
-    }
-  });
+    `;
+    this.appendChild(card);
+    requestAnimationFrame(() => {
+      const scrollContainer = this.querySelector(".tracking-treno-timeline-scroll");
+      const nextStop = this.querySelector(".tracking-treno-stop.next");
+      const toggle = this.querySelector(".tracking-percorso-toggle");
+      const timelineWrapper = this.querySelector(".tracking-fermate");
+      if (scrollContainer && nextStop) {
+        const offsetLeft = nextStop.offsetLeft - scrollContainer.offsetWidth / 2 + nextStop.offsetWidth / 2;
+        scrollContainer.scrollTo({ left: offsetLeft });
+      }
+      if (toggle && timelineWrapper) {
+        toggle.addEventListener("click", () => {
+          this._expanded = !this._expanded;
+          timelineWrapper.classList.toggle("expanded", this._expanded);
+          timelineWrapper.classList.toggle("collapsed", !this._expanded);
+          toggle.querySelector("ha-icon").setAttribute(
+            "icon",
+            this._expanded ? "mdi:chevron-up" : "mdi:chevron-down"
+          );
+        });
+      }
+    });
   }
   _getPopupStyles() {
     return `
