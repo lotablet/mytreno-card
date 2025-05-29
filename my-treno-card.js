@@ -7,6 +7,82 @@ loadHaComponents([
   "ha-entity-picker",
 ]).catch(() => {});
 
+// 1. OGGETTO GLOBALE TRADUZIONI E FUNZIONE GLOBALE
+if (!window.MyTrenoTranslations) window.MyTrenoTranslations = {
+  it: {
+    departures: "Partenze da",
+    arrivals: "Arrivi a",
+    destination: "Destinazione",
+    provenance: "Provenienza",
+    delay: "Ritardo",
+    platform: "Binario",
+    real: "Reale",
+    info: "Info",
+    on_time: "In orario",
+    next: "Prossima",
+    route: "Percorso",
+    loading: "⏳ Caricamento dati...",
+    not_available: "⚠️ Dati non disponibili",
+    add_card: "Aggiungi card",
+    train: "Treno",
+    late: "+{delay} min",
+    early: "{delay} min",
+    min: "min",
+    orario: "Orario",
+    select_station: "Seleziona la stazione",
+    select_theme: "Seleziona il tema",
+    theme_default: "Default",
+    theme_light: "Light (Chiaro)",
+    theme_neon: "Neon (Cyberpunk)",
+    theme_retro: "Retro (Classico)",
+    train_name: "Nome Treno",
+    select_train: "Seleziona il treno",
+    theme: "Tema",
+    show_route: "Percorso",
+    missing_sensor: "Config non valida: manca il sensore"
+  },
+  en: {
+    departures: "Departures from",
+    arrivals: "Arrivals at",
+    destination: "Destination",
+    provenance: "From",
+    delay: "Delay",
+    platform: "Platform",
+    real: "Actual",
+    info: "Info",
+    on_time: "On time",
+    next: "Next",
+    route: "Route",
+    loading: "⏳ Loading data...",
+    not_available: "⚠️ Data not available",
+    add_card: "Add card",
+    train: "Train",
+    late: "+{delay} min",
+    early: "{delay} min",
+    min: "min",
+    orario: "Time",
+    select_station: "Select station",
+    select_theme: "Select theme",
+    theme_default: "Default",
+    theme_light: "Light",
+    theme_neon: "Neon (Cyberpunk)",
+    theme_retro: "Retro (Classic)",
+    train_name: "Train Name",
+    select_train: "Select train",
+    theme: "Theme",
+    show_route: "Route",
+    missing_sensor: "Invalid config: missing sensor"
+  }
+};
+window.myTrenoT = function(key, lang, vars = {}) {
+  const labels = window.MyTrenoTranslations;
+  let str = (labels[lang] && labels[lang][key]) ? labels[lang][key] : (labels['en'][key] || key);
+  Object.keys(vars).forEach(k => {
+    str = str.replace(`{${k}}`, vars[k]);
+  });
+  return str;
+};
+
 class MyTrenoCardEditor extends LitElement {
   static properties = {
     hass: { type: Object },
@@ -18,45 +94,9 @@ class MyTrenoCardEditor extends LitElement {
     this._config = {};
   }
 
-  get _labels() {
-    const base = {
-      it: {
-        select_station: "Seleziona la stazione",
-        select_theme: "Seleziona il tema",
-        theme_default: "Default",
-        theme_light: "Light (Chiaro)",
-        theme_neon: "Neon (Cyberpunk)",
-        theme_retro: "Retro (Classico)",
-        train_name: "Nome Treno",
-        select_train: "Seleziona il treno",
-        theme: "Tema",
-        missing_sensor: "Config non valida: manca il sensore"
-      },
-      en: {
-        select_station: "Select station",
-        select_theme: "Select theme",
-        theme_default: "Default",
-        theme_light: "Light",
-        theme_neon: "Neon (Cyberpunk)",
-        theme_retro: "Retro (Classic)",
-        train_name: "Train Name",
-        select_train: "Select train",
-        theme: "Theme",
-        missing_sensor: "Invalid config: missing sensor"
-      }
-    };
-    const card = customElements.get('my-treno-card');
-    return card && card.prototype._labels ? card.prototype._labels : base;
-  }
-
   _getLang() {
     if (!this.hass) return 'en';
     return (this.hass.selectedLanguage || this.hass.language || 'en').substring(0,2);
-  }
-
-  _t(key) {
-    const lang = this._getLang();
-    return (this._labels[lang] && this._labels[lang][key]) ? this._labels[lang][key] : (this._labels['en'][key] || key);
   }
 
   setConfig(config) {
@@ -91,7 +131,7 @@ class MyTrenoCardEditor extends LitElement {
     const mytrenoEntities = Object.keys(this.hass.states)
       .filter(e => e.startsWith("sensor.mytreno"));
     return html`
-      <div class="section-title">${this._t('select_station')}</div>
+      <div class="section-title">${window.myTrenoT('select_station', this._getLang())}</div>
       <ha-selector
         .hass=${this.hass}
         .selector=${{
@@ -104,17 +144,17 @@ class MyTrenoCardEditor extends LitElement {
         @value-changed=${e => this._updateConfig("sensor", e.detail.value)}>
       </ha-selector>
       <div class="editor-block">
-        <ha-formfield label="${this._t('select_theme')}">
+        <ha-formfield label="${window.myTrenoT('select_theme', this._getLang())}">
           <ha-selector
             .hass=${this.hass}
             .selector=${{
               select: {
                 mode: "dropdown",
                 options: [
-                  { value: "default", label: this._t('theme_default') },
-                  { value: "light", label: this._t('theme_light') },
-                  { value: "neon", label: this._t('theme_neon') },
-                  { value: "retro", label: this._t('theme_retro') },
+                  { value: "default", label: window.myTrenoT('theme_default', this._getLang()) },
+                  { value: "light", label: window.myTrenoT('theme_light', this._getLang()) },
+                  { value: "neon", label: window.myTrenoT('theme_neon', this._getLang()) },
+                  { value: "retro", label: window.myTrenoT('theme_retro', this._getLang()) },
                 ]
               }
             }}
@@ -151,95 +191,12 @@ class MyTrenoCard extends HTMLElement {
     super();
     this.page = 0;
     this._preventRender = false;
-    this._labels = {
-      it: {
-        // Card principali
-        departures: "Partenze da",
-        arrivals: "Arrivi a",
-        destination: "Destinazione",
-        provenance: "Provenienza",
-        delay: "Ritardo",
-        platform: "Binario",
-        real: "Reale",
-        info: "Info",
-        on_time: "In orario",
-        next: "Prossima",
-        route: "Percorso",
-        loading: "⏳ Caricamento dati...",
-        not_available: "⚠️ Dati non disponibili",
-        add_card: "Aggiungi card",
-        train: "Treno",
-        late: "+{delay} min",
-        early: "{delay} min",
-        min: "min",
-        orario: "Orario",
-        // Editor
-        select_station: "Seleziona la stazione",
-        select_theme: "Seleziona il tema",
-        theme_default: "Default",
-        theme_light: "Light (Chiaro)",
-        theme_neon: "Neon (Cyberpunk)",
-        theme_retro: "Retro (Classico)",
-        // Tracking editor
-        train_name: "Nome Treno",
-        select_train: "Seleziona il treno",
-        theme: "Tema",
-        // Tracking card
-        show_route: "Percorso",
-        missing_sensor: "Config non valida: manca il sensore"
-      },
-      en: {
-        departures: "Departures from",
-        arrivals: "Arrivals at",
-        destination: "Destination",
-        provenance: "From",
-        delay: "Delay",
-        platform: "Platform",
-        real: "Actual",
-        info: "Info",
-        on_time: "On time",
-        next: "Next",
-        route: "Route",
-        loading: "⏳ Loading data...",
-        not_available: "⚠️ Data not available",
-        add_card: "Add card",
-        train: "Train",
-        late: "+{delay} min",
-        early: "{delay} min",
-        min: "min",
-        orario: "Time",
-        // Editor
-        select_station: "Select station",
-        select_theme: "Select theme",
-        theme_default: "Default",
-        theme_light: "Light",
-        theme_neon: "Neon (Cyberpunk)",
-        theme_retro: "Retro (Classic)",
-        // Tracking editor
-        train_name: "Train Name",
-        select_train: "Select train",
-        theme: "Theme",
-        // Tracking card
-        show_route: "Route",
-        missing_sensor: "Invalid config: missing sensor"
-      }
-    };
+    this._popupOpen = false;
   }
 
   _getLang() {
     if (!this._hass) return 'en';
     return (this._hass.selectedLanguage || this._hass.language || 'en').substring(0,2);
-  }
-
-  _t(key, vars = {}) {
-    const lang = this._getLang();
-    let str = (this._labels[lang] && this._labels[lang][key])
-      ? this._labels[lang][key]
-      : (this._labels['en'][key] || key);
-    Object.keys(vars).forEach(k => {
-      str = str.replace(`{${k}}`, vars[k]);
-    });
-    return str;
   }
 
   async _showTrainDetails(treno) {
@@ -256,7 +213,7 @@ class MyTrenoCard extends HTMLElement {
 
     const loadingPopup = document.createElement("div");
     loadingPopup.className = `treno-popup theme-${this._theme}`;
-    loadingPopup.innerHTML = `<div class="treno-popup-content">${this._t('loading')}</div>`;
+    loadingPopup.innerHTML = `<div class="treno-popup-content">${window.myTrenoT('loading', this._getLang())}</div>`;
     loadingOverlay.appendChild(loadingPopup);
     this.appendChild(loadingOverlay);
 
@@ -287,7 +244,7 @@ class MyTrenoCard extends HTMLElement {
 
       const errorPopup = document.createElement("div");
       errorPopup.className = `treno-popup theme-${this._theme}`;
-      errorPopup.innerHTML = `<div class="treno-popup-content" style="color:red;">${this._t('not_available')}</div>`;
+      errorPopup.innerHTML = `<div class="treno-popup-content" style="color:red;">${window.myTrenoT('not_available', this._getLang())}</div>`;
       errorOverlay.appendChild(errorPopup);
       this.appendChild(errorOverlay);
       errorOverlay.addEventListener("click", e => { if (e.target === errorOverlay) errorOverlay.remove(); });
@@ -322,10 +279,10 @@ class MyTrenoCard extends HTMLElement {
     popup.innerHTML = `
       <button class="close-btn">&times;</button>
       <div class="treno-popup-content">
-        <h3>${this._t('train')} ${attrs.train_number}</h3>
-        <p><strong>${this._t('delay')}:</strong> ${attrs.ritardo ?? "-"}</p>
-        <p><strong>${this._t('next')}:</strong> ${attrs.prossima_stazione ?? "-"}</p>
-        <h4>${this._t('route')}</h4>
+        <h3>${window.myTrenoT('train', this._getLang())} ${attrs.train_number}</h3>
+        <p><strong>${window.myTrenoT('delay', this._getLang())}:</strong> ${attrs.ritardo ?? "-"}</p>
+        <p><strong>${window.myTrenoT('next', this._getLang())}:</strong> ${attrs.prossima_stazione ?? "-"}</p>
+        <h4>${window.myTrenoT('route', this._getLang())}</h4>
         <div class="fermate">${fermateHTML}</div>
       </div>
       <style>
@@ -574,7 +531,7 @@ class MyTrenoCard extends HTMLElement {
     }
 
     if (!config.sensor) {
-      throw new Error(this._t('missing_sensor'));
+      throw new Error(window.myTrenoT('missing_sensor', this._getLang()));
     }
 
     if (!config.extra_sensor) {
@@ -1064,12 +1021,12 @@ class MyTrenoCard extends HTMLElement {
           <div class="treno-slider-wrapper">
             <div class="treno-slider">
               <div class="treno-page">
-                <div class="treno-title">${this._t('departures')} ${stationName}</div>
+                <div class="treno-title">${window.myTrenoT('departures', this._getLang())} ${stationName}</div>
                 ${this._renderTable(partenze, "destinazione", "destination", true)}
                 ${this._renderTable(partenze, "destinazione", "destination", false)}
               </div>
               <div class="treno-page">
-                <div class="treno-title">${this._t('arrivals')} ${stationName}</div>
+                <div class="treno-title">${window.myTrenoT('arrivals', this._getLang())} ${stationName}</div>
                 ${this._renderTable(arrivi, "provenienza", "provenance", true)}
                 ${this._renderTable(arrivi, "provenienza", "provenance", false)}
               </div>
@@ -1165,11 +1122,11 @@ class MyTrenoCard extends HTMLElement {
       <table class="${isDesktop ? 'treno-desktop-view' : 'treno-mobile-view'}">
         <thead>
           <tr>
-            <th>${this._t(label)}</th>
-            <th>${this._t('orario')}</th>
-            ${isDesktop ? `<th>${this._t('delay')}</th>` : ''}
-            ${isDesktop ? `<th>${this._t('platform')}</th>` : `<th>${this._t('info')}</th>`}
-            ${isDesktop ? `<th>${this._t('real')}</th>` : ''}
+            <th>${window.myTrenoT(label, this._getLang())}</th>
+            <th>${window.myTrenoT('orario', this._getLang())}</th>
+            ${isDesktop ? `<th>${window.myTrenoT('delay', this._getLang())}</th>` : ''}
+            ${isDesktop ? `<th>${window.myTrenoT('platform', this._getLang())}</th>` : `<th>${window.myTrenoT('info', this._getLang())}</th>`}
+            ${isDesktop ? `<th>${window.myTrenoT('real', this._getLang())}</th>` : ''}
           </tr>
         </thead>
         <tbody>
@@ -1214,15 +1171,15 @@ class MyTrenoCard extends HTMLElement {
 
   _formatDelay(delay) {
     if (delay > 5) {
-      return `<div class="status-chip late">${this._t('late', {delay})}</div>`;
+      return `<div class="status-chip late">${window.myTrenoT('late', this._getLang(), {delay})}</div>`;
     }
     if (delay > 0) {
-      return `<div class="status-chip delayed">${this._t('late', {delay})}</div>`;
+      return `<div class="status-chip delayed">${window.myTrenoT('late', this._getLang(), {delay})}</div>`;
     }
     if (delay < 0) {
-      return `<div class="status-chip delayed">${this._t('early', {delay})}</div>`;
+      return `<div class="status-chip delayed">${window.myTrenoT('early', this._getLang(), {delay})}</div>`;
     }
-    return `<div class="status-chip on-time">${this._t('on_time')}</div>`;
+    return `<div class="status-chip on-time">${window.myTrenoT('on_time', this._getLang())}</div>`;
   }
 
   getCardSize() {
@@ -1250,85 +1207,9 @@ class MyTrenoCardTrackingEditor extends LitElement {
     this._config = {};
   }
 
-  get _labels() {
-    const base = {
-      it: {
-        select_station: "Seleziona la stazione",
-        select_theme: "Seleziona il tema",
-        theme_default: "Default",
-        theme_light: "Light (Chiaro)",
-        theme_neon: "Neon (Cyberpunk)",
-        theme_retro: "Retro (Classico)",
-        train_name: "Nome Treno",
-        select_train: "Seleziona il treno",
-        theme: "Tema",
-        // Card tracking
-        train: "Treno",
-        delay: "Ritardo",
-        next: "Prossima",
-        route: "Percorso",
-        min: "min",
-        arrivals: "Arrivi a",
-        departures: "Partenze da",
-        provenance: "Provenienza",
-        destination: "Destinazione",
-        on_time: "In orario",
-        late: "+{delay} min",
-        early: "{delay} min",
-        info: "Info",
-        platform: "Binario",
-        real: "Reale",
-        show_route: "Percorso",
-        not_available: "⚠️ Dati non disponibili",
-        loading: "⏳ Caricamento dati...",
-        add_card: "Aggiungi card",
-        orario: "Orario"
-      },
-      en: {
-        select_station: "Select station",
-        select_theme: "Select theme",
-        theme_default: "Default",
-        theme_light: "Light",
-        theme_neon: "Neon (Cyberpunk)",
-        theme_retro: "Retro (Classic)",
-        train_name: "Train Name",
-        select_train: "Select train",
-        theme: "Theme",
-        // Card tracking
-        train: "Train",
-        delay: "Delay",
-        next: "Next",
-        route: "Route",
-        min: "min",
-        arrivals: "Arrivals at",
-        departures: "Departures from",
-        provenance: "From",
-        destination: "Destination",
-        on_time: "On time",
-        late: "+{delay} min",
-        early: "{delay} min",
-        info: "Info",
-        platform: "Platform",
-        real: "Actual",
-        show_route: "Route",
-        not_available: "⚠️ Data not available",
-        loading: "⏳ Loading data...",
-        add_card: "Add card",
-        orario: "Time"
-      }
-    };
-    const card = customElements.get('my-treno-card');
-    return card && card.prototype._labels ? card.prototype._labels : base;
-  }
-
   _getLang() {
     if (!this.hass) return 'en';
     return (this.hass.selectedLanguage || this.hass.language || 'en').substring(0,2);
-  }
-
-  _t(key) {
-    const lang = this._getLang();
-    return (this._labels[lang] && this._labels[lang][key]) ? this._labels[lang][key] : (this._labels['en'][key] || key);
   }
 
   setConfig(config) {
@@ -1357,13 +1238,13 @@ class MyTrenoCardTrackingEditor extends LitElement {
     return html`
       <div style="display: flex; flex-direction: column; gap: 1.5rem;">
         <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label style="font-size: 0.85rem; opacity: 0.7;">${this._t('train_name')}</label>
+          <label style="font-size: 0.85rem; opacity: 0.7;">${window.myTrenoT('train_name', this._getLang())}</label>
           <ha-textfield style="max-width: 50%;"
             .value=${this._config.title || ""}
             @input=${e => this._updateConfig("title", e.target.value)}
           ></ha-textfield>
         </div>
-        <div class="section-title">${this._t('select_train')}</div>
+        <div class="section-title">${window.myTrenoT('select_train', this._getLang())}</div>
         <ha-selector
           style="max-width: 50%;"
           .hass=${this.hass}
@@ -1377,17 +1258,17 @@ class MyTrenoCardTrackingEditor extends LitElement {
           @value-changed=${e => this._updateConfig("sensor", e.detail.value)}>
         </ha-selector>
         <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label style="font-size: 0.85rem; opacity: 0.7;">${this._t('theme')}</label>
+          <label style="font-size: 0.85rem; opacity: 0.7;">${window.myTrenoT('theme', this._getLang())}</label>
           <ha-selector style="max-width: 50%;"
             .hass=${this.hass}
             .selector=${{
               select: {
                 mode: "dropdown",
                 options: [
-                  { value: "default", label: this._t('theme_default') },
-                  { value: "light", label: this._t('theme_light') },
-                  { value: "neon", label: this._t('theme_neon') },
-                  { value: "retro", label: this._t('theme_retro') }
+                  { value: "default", label: window.myTrenoT('theme_default', this._getLang()) },
+                  { value: "light", label: window.myTrenoT('theme_light', this._getLang()) },
+                  { value: "neon", label: window.myTrenoT('theme_neon', this._getLang()) },
+                  { value: "retro", label: window.myTrenoT('theme_retro', this._getLang()) }
                 ]
               }
             }}
@@ -1418,92 +1299,12 @@ class MyTrenoTrackingCard extends HTMLElement {
     this._lastState = null;
     this._expanded = false;
   }
-  get _labels() {
-    const base = {
-      it: {
-        select_station: "Seleziona la stazione",
-        select_theme: "Seleziona il tema",
-        theme_default: "Default",
-        theme_light: "Light (Chiaro)",
-        theme_neon: "Neon (Cyberpunk)",
-        theme_retro: "Retro (Classico)",
-        train_name: "Nome Treno",
-        select_train: "Seleziona il treno",
-        theme: "Tema",
-        // Card tracking
-        train: "Treno",
-        delay: "Ritardo",
-        next: "Prossima",
-        route: "Percorso",
-        min: "min",
-        arrivals: "Arrivi a",
-        departures: "Partenze da",
-        provenance: "Provenienza",
-        destination: "Destinazione",
-        on_time: "In orario",
-        late: "+{delay} min",
-        early: "{delay} min",
-        info: "Info",
-        platform: "Binario",
-        real: "Reale",
-        show_route: "Percorso",
-        not_available: "⚠️ Dati non disponibili",
-        loading: "⏳ Caricamento dati...",
-        add_card: "Aggiungi card",
-        orario: "Orario"
-      },
-      en: {
-        select_station: "Select station",
-        select_theme: "Select theme",
-        theme_default: "Default",
-        theme_light: "Light",
-        theme_neon: "Neon (Cyberpunk)",
-        theme_retro: "Retro (Classic)",
-        train_name: "Train Name",
-        select_train: "Select train",
-        theme: "Theme",
-        // Card tracking
-        train: "Train",
-        delay: "Delay",
-        next: "Next",
-        route: "Route",
-        min: "min",
-        arrivals: "Arrivals at",
-        departures: "Departures from",
-        provenance: "From",
-        destination: "Destination",
-        on_time: "On time",
-        late: "+{delay} min",
-        early: "{delay} min",
-        info: "Info",
-        platform: "Platform",
-        real: "Actual",
-        show_route: "Route",
-        not_available: "⚠️ Data not available",
-        loading: "⏳ Loading data...",
-        add_card: "Add card",
-        orario: "Time"
-      }
-    };
-    const card = customElements.get('my-treno-card');
-    return card && card.prototype._labels ? card.prototype._labels : base;
-  }
   _getLang() {
     if (!this._hass) return 'en';
     return (this._hass.selectedLanguage || this._hass.language || 'en').substring(0,2);
   }
-  _t(key, vars = {}) {
-    const lang = this._getLang();
-    let str = (this._labels[lang] && this._labels[lang][key])
-      ? this._labels[lang][key]
-      : (this._labels['en'][key] || key);
-    Object.keys(vars).forEach(k => {
-      str = str.replace(`{${k}}`, vars[k]);
-    });
-    return str;
-  }
   setConfig(config) {
-    if (!config.sensor) throw new Error(this._t('missing_sensor'));
+    if (!config.sensor) throw new Error(window.myTrenoT('missing_sensor', this._getLang()));
     this._sensor = config.sensor;
     this._theme = config.theme || "default";
     this._config = config;
@@ -1529,8 +1330,8 @@ class MyTrenoTrackingCard extends HTMLElement {
     const fermate = Array.isArray(data.fermate) ? data.fermate : [];
     const prossima = data.prossima_stazione || "-";
     const orario = (data.orario_previsto_prossima || "").substring(11, 16) || "--";
-    const titolo = this._config.title || `${this._t('train')} ${data.train_number || "??"}`;
-    const ritardo = (typeof newState === 'number' || !isNaN(parseInt(newState))) ? `${newState} ${this._t('min')}` : this._t('not_available');
+    const titolo = this._config.title || `${window.myTrenoT('train', this._getLang())} ${data.train_number || "??"}`;
+    const ritardo = (typeof newState === 'number' || !isNaN(parseInt(newState))) ? `${newState} ${window.myTrenoT('min', this._getLang())}` : window.myTrenoT('not_available', this._getLang());
     const fermateHTML = `
       <div class="tracking-treno-timeline-scroll">
         <div class="tracking-treno-timeline">
@@ -1557,10 +1358,10 @@ class MyTrenoTrackingCard extends HTMLElement {
       <div class="tracking-treno-popup-content">
         ${this._config.title ? `<p class="treno-custom-title">${this._config.title}</p>` : ""}
         <h3>${titolo}</h3>
-        <p><strong>${this._t('delay')}:</strong> ${ritardo}</p>
-        <p><strong>${this._t('next')}:</strong> ${prossima} (${orario})</p>
+        <p><strong>${window.myTrenoT('delay', this._getLang())}:</strong> ${ritardo}</p>
+        <p><strong>${window.myTrenoT('next', this._getLang())}:</strong> ${prossima} (${orario})</p>
         <div class="tracking-percorso-toggle">
-          <span>${this._t('show_route')}</span>
+          <span>${window.myTrenoT('show_route', this._getLang())}</span>
           <ha-icon icon="mdi:chevron-down"></ha-icon>
         </div>
         <div class="tracking-fermate collapsed">${fermateHTML}</div>
@@ -1589,6 +1390,7 @@ class MyTrenoTrackingCard extends HTMLElement {
       }
     });
   }
+
   _getPopupStyles() {
     return `
       .tracking-percorso-toggle {
