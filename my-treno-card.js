@@ -192,6 +192,43 @@ class MyTrenoCard extends HTMLElement {
     this.page = 0;
     this._preventRender = false;
     this._popupOpen = false;
+    this._resizeHandler = this._updateScrollingText.bind(this);
+    this._visibilityHandler = this._updateScrollingText.bind(this);
+  }
+
+  connectedCallback() {
+    window.addEventListener('resize', this._resizeHandler);
+    document.addEventListener('visibilitychange', this._visibilityHandler);
+    this._updateScrollingText();
+  }
+  disconnectedCallback() {
+    window.removeEventListener('resize', this._resizeHandler);
+    document.removeEventListener('visibilitychange', this._visibilityHandler);
+  }
+
+  _updateScrollingText() {
+    // Esegui solo se la card è visibile
+    if (document.hidden) return;
+    requestAnimationFrame(() => {
+      this.querySelectorAll('.treno-scrollable-text').forEach(el => {
+        const span = el.querySelector('span');
+        if (span && span.scrollWidth > el.clientWidth) {
+          el.classList.add('treno-overflowing');
+          el.style.setProperty('--scroll-width', el.clientWidth + 'px');
+        } else {
+          el.classList.remove('treno-overflowing');
+          el.style.removeProperty('--scroll-width');
+        }
+      });
+      this.querySelectorAll('.treno-ritardo-box').forEach(el => {
+        const span = el.querySelector('span');
+        if (span && span.scrollWidth > el.clientWidth) {
+          el.classList.add('treno-scroll');
+        } else {
+          el.classList.remove('treno-scroll');
+        }
+      });
+    });
   }
 
   _getLang() {
@@ -873,29 +910,24 @@ class MyTrenoCard extends HTMLElement {
             min-width: 0;
             width: 100%;
             overflow: hidden;
-            text-overflow: ellipsis;
             white-space: nowrap;
             display: block;
           }
           .treno-scrollable-text span {
             display: inline-block;
-            min-width: 0;
-            width: 100%;
-            max-width: 100%;
             white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
             will-change: transform;
             padding-right: 20px;
+            text-overflow: unset;
           }
           .treno-scrollable-text.treno-overflowing span {
-            animation: scroll-text 5s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+            animation: scroll-text 7s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
           }
           @keyframes scroll-text {
             0% { transform: translateX(0); }
             5% { transform: translateX(0); }
-            35% { transform: translateX(calc(-100% + 100%)); }
-            65% { transform: translateX(calc(-100% + 100%)); }
+            35% { transform: translateX(calc(-100% + var(--scroll-width, 100%))); }
+            65% { transform: translateX(calc(-100% + var(--scroll-width, 100%))); }
             95% { transform: translateX(0); }
             100% { transform: translateX(0); }
           }
@@ -1047,35 +1079,7 @@ class MyTrenoCard extends HTMLElement {
       });
     });
 
-    requestAnimationFrame(() => {
-      this.querySelectorAll(".treno-scrollable-text").forEach(el => {
-        const span = el.querySelector("span");
-        if (span && span.scrollWidth > el.clientWidth) {
-          el.classList.add("treno-overflowing");
-        } else {
-          el.classList.remove("treno-overflowing");
-        }
-      });
-
-      this.querySelectorAll(".treno-ritardo-box").forEach(el => {
-        const span = el.querySelector("span");
-        if (span && span.scrollWidth > el.clientWidth) {
-          el.classList.add("treno-scroll");
-        } else {
-          el.classList.remove("treno-scroll");
-        }
-      });
-
-      // Scroll alla pagina corrente
-      const slider = this.querySelector('.treno-slider');
-      if (slider) {
-        const pages = slider.querySelectorAll('.treno-page');
-        if (pages.length > this.page) {
-          const pageEl = pages[this.page];
-          slider.scrollTo({ left: pageEl.offsetLeft, behavior: 'smooth' });
-        }
-      }
-    });
+    this._updateScrollingText();
 
     this.querySelector("#nextBtn").addEventListener("click", () => {
       this.page = (this.page + 1) % 2;
