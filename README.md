@@ -1,5 +1,6 @@
 
-**DISCONTINUED** 
+# **DISCONTINUED** 
+
 A causa di altri impegni non potrò più aggiornare questo componente.
 
 Grazie a tutti del supporto 🙏🏻❤️
