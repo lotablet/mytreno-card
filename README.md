@@ -1,3 +1,12 @@
+
+**DISCONTINUED** 
+A causa di altri impegni non potrò più aggiornare questo componente.
+
+Grazie a tutti del supporto 🙏🏻❤️
+
+
+
+
 # MyTreno Card
 
 ![version](https://img.shields.io/badge/version-2.0.1-blue)
